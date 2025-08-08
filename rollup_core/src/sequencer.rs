@@ -74,7 +74,8 @@ pub fn run(
             })
             .map_err(|_| anyhow!("failed to send message to rollupdb"))?;
 
-        // Verify ransaction signatures, integrity
+            // TODO
+        rollup_account_loader.add_account(pubkey, modified_or_new_account);
 
         // Process transaction
 
@@ -84,7 +85,6 @@ pub fn run(
         let rent_collector = RentCollector::default();
         // let rent_collector = RentCollector::default();
 
-        // Solana runtime.
         let fork_graph = Arc::new(RwLock::new(RollupForkGraph {}));
 
         println!("Create batch transactions...");
@@ -122,36 +122,18 @@ pub fn run(
             &processing_config,
         );
 
-        // let mut cache = processor.program_cache.write().unwrap();
-
-        // // Initialize the mocked fork graph.
-        // // let fork_graph = Arc::new(RwLock::new(PayTubeForkGraph {}));
-        // cache.fork_graph = Some(Arc::downgrade(&fork_graph));
-
-        // let rent = Rent::default();
-
-        // let default_env = EnvironmentConfig::new(blockhash, epoch_total_stake, epoch_vote_accounts, feature_set, lamports_per_signature, sysvar_cache)
-
-        // let processing_environment = TransactionProcessingEnvironment {
-        //     blockhash: Hash::default(),
-        //     epoch_total_stake: None,
-        //     epoch_vote_accounts: None,
-        //     feature_set: Arc::new(feature_set),
-        //     fee_structure: Some(&fee_structure),
-        //     lamports_per_signature,
-        //     rent_collector: Some(&rent_collector),
-        // };
-
-        // Send processed transaction to db for storage and availability
-        // println!("send transaction to rollupddb");
-        // rollupdb_sender
-        //     .send(RollupDBMessage {
-        //         lock_accounts: None,
-        //         add_processed_transaction: Some(transaction),
-        //         frontend_get_tx: None,
-        //         add_settle_proof: None,
-        //     })
-        //     .unwrap();
+        log::info!(
+            "\n====================[ RESULTS DEBUG DUMP ]====================\n\
+    📦 balance_collector:\n{:#?}\n\
+    ⏱  executed_timings:\n{:#?}\n\
+    📊 processing_results:\n{:#?}\n\
+    ❗ error_metrics:\n{:#?}\n\
+    =============================================================\n",
+            results.balance_collector,
+            results.execute_timings,
+            results.processing_results,
+            results.error_metrics
+        );
 
         // Call settle if transaction amount since last settle hits 10
         if tx_counter >= 2 {
@@ -188,6 +170,21 @@ impl<'a> RollupAccountLoader<'a> {
         Self {
             cache: RwLock::new(HashMap::new()),
             rpc_client,
+        }
+    }
+
+    pub fn add_account(&mut self, pubkey: Pubkey, modified_or_new_account: AccountSharedData) {
+        let mut map = self.cache.write().unwrap();
+        let res = map.contains_key(&pubkey);
+        if res == false {
+            map.insert(pubkey, modified_or_new_account);
+            log::info!("new account added: {:?}", map)
+        } 
+        // updating exisiting account
+        else {
+            map.insert(pubkey, modified_or_new_account);
+
+            log::info!("modifying exisiting account: {:?}", map)
         }
     }
 }
