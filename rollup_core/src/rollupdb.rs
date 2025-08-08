@@ -64,7 +64,7 @@ impl RollupDB {
                 db.transactions.insert(tx_hash, tx.clone());
                 log::info!("INSERTED TX IN DB");
 
-                log::info!("DB: {:?}", db)
+                log::info!("DB: {:#?}", db)
             }
             // ✅ verwerk frontend_get_tx indien aanwezig
             if let Some(get_this_hash_tx) = &message.frontend_get_tx {
